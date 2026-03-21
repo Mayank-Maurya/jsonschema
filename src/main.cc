@@ -10,7 +10,6 @@
 #include "command.h"
 #include "configure.h"
 #include "error.h"
-#include "utils.h"
 
 constexpr std::string_view USAGE_DETAILS{R"EOF(
 Global Options:
@@ -133,6 +132,14 @@ Commands:
        verify dependencies against the lock file without modifying it,
        intended for CI/CD environments.
 
+   compatibility <source-schema.json> <target-schema.json>
+                 [--mode/-m <backward|forward|full>] [--output/-o <text|json>]
+                 [--strict] [--quiet/-q] [--no-color]
+
+       Check whether the target schema introduces breaking changes relative
+       to the source schema. Requires both files to be passed.
+       Outputs result as text, or as JSON if piped/redirected.
+
 For more documentation, visit https://github.com/sourcemeta/jsonschema
 )EOF"};
 
@@ -229,6 +236,15 @@ auto jsonschema_main(const std::string &program, const std::string &command,
     app.flag("frozen", {"z"});
     app.parse(argc, argv, {.skip = 1});
     sourcemeta::jsonschema::install(app);
+    return EXIT_SUCCESS;
+  } else if (command == "compatibility") {
+    app.option("mode", {"m"});
+    app.option("output", {"o"});
+    app.flag("strict", {});
+    app.flag("quiet", {"q"});
+    app.flag("no-color", {});
+    app.parse(argc, argv, {.skip = 1});
+    sourcemeta::jsonschema::compatibility(app);
     return EXIT_SUCCESS;
   } else if (command == "help" || command == "--help" || command == "-h") {
     std::cout << "JSON Schema CLI - v"
