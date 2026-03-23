@@ -5,13 +5,6 @@
 #include "command.h"
 #include "error.h"
 
-// ANSI escape codes for basic colors
-#define ANSI_COLOR_RED "\033[31m"
-#define ANSI_COLOR_GREEN "\033[32m"
-#define ANSI_COLOR_YELLOW "\033[33m"
-#define ANSI_COLOR_BOLD "\033[1m"
-#define ANSI_COLOR_RESET "\033[0m"
-
 auto sourcemeta::jsonschema::compatibility(
     const sourcemeta::core::Options &options) -> void {
 
@@ -37,7 +30,6 @@ auto sourcemeta::jsonschema::compatibility(
   }
 
   bool quiet = options.contains("quiet");
-  bool no_color = options.contains("no-color");
 
   // Stub error condition text based on testing input matching
   bool is_failing_case = target_path.find("fail") != std::string::npos ||
@@ -47,66 +39,54 @@ auto sourcemeta::jsonschema::compatibility(
   if (output == "json") {
     if (!quiet) {
       if (is_failing_case) {
-        std::cout
-            << "{\n"
-               "  \"mode\": \""
-            << mode
-            << "\",\n"
-               "  \"compatible\": false,\n"
-               "  \"breaking_changes\": [\n"
-               "    {\n"
-               "      \"path\": \"/properties/email\",\n"
-               "      \"message\": \"Constraint tightened: added 'format': "
-               "'email'.\"\n"
-               "    },\n"
-               "    {\n"
-               "      \"path\": \"/properties/age\",\n"
-               "      \"message\": \"Type narrowed: removed 'string' from type "
-               "array.\"\n"
-               "    }\n"
-               "  ],\n"
-               "  \"warnings\": [\n"
-               "    {\n"
-               "      \"path\": \"/properties/username\",\n"
-               "      \"message\": \"'maxLength' reduced from 100 to 50.\"\n"
-               "    }\n"
-               "  ]\n"
-               "}\n";
+        sourcemeta::core::JSON result{
+            {"mode", sourcemeta::core::JSON{mode}},
+            {"compatible", sourcemeta::core::JSON{false}},
+            {"breaking_changes", sourcemeta::core::JSON{
+              sourcemeta::core::JSON{
+                {"path", sourcemeta::core::JSON{"/properties/email"}},
+                {"message", sourcemeta::core::JSON{"Constraint tightened: added 'format': 'email'."}}
+              },
+              sourcemeta::core::JSON{
+                {"path", sourcemeta::core::JSON{"/properties/age"}},
+                {"message", sourcemeta::core::JSON{"Type narrowed: removed 'string' from type array."}}
+              }
+            }},
+            {"warnings", sourcemeta::core::JSON{
+              sourcemeta::core::JSON{
+                {"path", sourcemeta::core::JSON{"/properties/username"}},
+                {"message", sourcemeta::core::JSON{"'maxLength' reduced from 100 to 50."}}
+              }
+            }}
+        };
+        sourcemeta::core::prettify(result, std::cout);
+        std::cout << "\n";
       } else {
-        std::cout << "{\n"
-                     "  \"mode\": \""
-                  << mode
-                  << "\",\n"
-                     "  \"compatible\": true,\n"
-                     "  \"breaking_changes\": [],\n"
-                     "  \"warnings\": []\n"
-                     "}\n";
+        sourcemeta::core::JSON result{
+            {"mode", sourcemeta::core::JSON{mode}},
+            {"compatible", sourcemeta::core::JSON{true}},
+            {"breaking_changes", sourcemeta::core::JSON::make_array()},
+            {"warnings", sourcemeta::core::JSON::make_array()}
+        };
+        sourcemeta::core::prettify(result, std::cout);
+        std::cout << "\n";
       }
     }
   } else {
     // Text format output
     if (!quiet) {
-      const char *red = no_color ? "" : ANSI_COLOR_RED;
-      const char *green = no_color ? "" : ANSI_COLOR_GREEN;
-      const char *yellow = no_color ? "" : ANSI_COLOR_YELLOW;
-      const char *reset = no_color ? "" : ANSI_COLOR_RESET;
-      const char *bold = no_color ? "" : ANSI_COLOR_BOLD;
-
       if (is_failing_case) {
         std::cout
-            << red << "✖ Compatibility check failed " << reset
-            << "(mode: " << mode << ").\n"
+            << "✖ Compatibility check failed (mode: " << mode << ").\n"
             << "  Found 2 breaking changes and 1 warning:\n\n"
-            << red << bold << "  [BREAKING]" << reset << " /properties/email\n"
+            << "  [BREAKING] /properties/email\n"
             << "    - Constraint tightened: added \"format\": \"email\".\n\n"
-            << red << bold << "  [BREAKING]" << reset << " /properties/age\n"
+            << "  [BREAKING] /properties/age\n"
             << "    - Type narrowed: removed \"string\" from type array.\n\n"
-            << yellow << bold << "  [WARNING] " << reset
-            << " /properties/username\n"
+            << "  [WARNING]  /properties/username\n"
             << "    - \"maxLength\" reduced from 100 to 50.\n";
       } else {
-        std::cout << green << "✔ Compatibility check passed " << reset
-                  << "(mode: " << mode << ").\n"
+        std::cout << "✔ Compatibility check passed (mode: " << mode << ").\n"
                   << "  No breaking changes detected between " << source_path
                   << " and " << target_path << ".\n";
       }

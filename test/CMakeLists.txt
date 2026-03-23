@@ -783,6 +783,10 @@ add_jsonschema_test_unix(decode/pass_schema_less_jsonl_verbose)
 add_jsonschema_test_unix(decode/fail_no_document)
 add_jsonschema_test_unix(decode/fail_no_output)
 
+# Compatibility
+add_jsonschema_test_unix(compatibility/pass_backward)
+add_jsonschema_test_unix(compatibility/fail_backward)
+
 # CI specific tests
 add_jsonschema_test_unix_ci(pass_bundle_http)
 add_jsonschema_test_unix_ci(fail_bundle_http_non_200)
